@@ -88,9 +88,10 @@ class BlogPost
         return $this->author;
     }
 
-    public function setAuthor(?User $author): void
+    public function setAuthor(?User $author): self
     {
         $this->author = $author;
+        return $this;
     }
 
 }

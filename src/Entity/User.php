@@ -5,13 +5,15 @@ namespace App\Entity;
 use ApiPlatform\Metadata\ApiResource;
 use App\Repository\UserRepository;
 use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
-use Symfony\Component\PasswordHasher\PasswordHasherInterface;
+use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
+use Symfony\Component\Security\Core\User\UserInterface;
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
 #[ORM\Table(name: '`user`')]
 #[ApiResource]
-class User
+class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -31,10 +33,10 @@ class User
     private ?string $email = null;
 
     #[ORM\OneToMany(targetEntity: BlogPost::class, mappedBy: 'author')]
-    private ArrayCollection $posts;
+    private Collection $posts;
 
     #[ORM\OneToMany(targetEntity: Comment::class, mappedBy: 'author')]
-    private ArrayCollection $comments;
+    private Collection $comments;
 
     public function __construct()
     {
@@ -64,9 +66,9 @@ class User
         return $this->password;
     }
 
-    public function setPassword(string $password, PasswordHasherInterface $passwordHashes): static
+    public function setPassword(string $password): static
     {
-        $this->password = $passwordHashes->hash($password);
+        $this->password = $password;
 
         return $this;
     }
@@ -95,14 +97,28 @@ class User
         return $this;
     }
 
-    public function getPosts(): array
+    public function getPosts(): Collection
     {
-        return $this->posts->toArray();
+        return $this->posts;
     }
 
-    public function getComments(): array
+    public function getComments(): Collection
     {
-        return $this->comments->toArray();
+        return $this->comments;
     }
 
+    public function getRoles(): array
+    {
+        return ['ROLE_USER'];
+    }
+
+    public function eraseCredentials(): void
+    {
+        // TODO: Implement eraseCredentials() method.
+    }
+
+    public function getUserIdentifier(): string
+    {
+        return $this->username;
+    }
 }
