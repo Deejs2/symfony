@@ -7,13 +7,20 @@ use App\Repository\UserRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Serializer\Attribute\Groups;
+use Symfony\Component\Validator\Constraints as Assert;
+use Symfony\Component\Validator\Constraints\Email;
+use Symfony\Component\Validator\Constraints\Length;
+use Symfony\Component\Validator\Constraints\NotBlank;
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
 #[ORM\Table(name: '`user`')]
 #[ApiResource(normalizationContext: ['groups' => ['get']])]
+#[UniqueEntity("username")]
+#[UniqueEntity("email")]
 class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
     #[ORM\Id]
@@ -24,16 +31,30 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     #[ORM\Column(length: 255, unique: true)]
     #[Groups(['get'])]
+    #[NotBlank, Length(min: 6, max: 255)]
     private ?string $username = null;
 
     #[ORM\Column(length: 255)]
+    #[NotBlank, Assert\Regex(
+        pattern: '/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{6,}$/',
+        message: 'Password must be seven characters long and contain at least one digit, one uppercase letter, and one lowercase letter'
+    )]
     private ?string $password = null;
+
+    #[NotBlank]
+    #[Assert\Expression(
+        expression: 'this.getPassword() === this.getRetypedPassword()',
+        message: 'Passwords do not match'
+    )]
+    private string $retypedPassword = '';
 
     #[ORM\Column(length: 255)]
     #[Groups(['get'])]
+    #[NotBlank, Length(min: 5, max: 255)]
     private ?string $name = null;
 
     #[ORM\Column(length: 255, unique: true)]
+    #[NotBlank, Email, Length(min: 6, max: 255)]
     private ?string $email = null;
 
     #[ORM\OneToMany(targetEntity: BlogPost::class, mappedBy: 'author')]
@@ -127,4 +148,15 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     {
         return $this->username;
     }
+
+    public function getRetypedPassword(): string
+    {
+        return $this->retypedPassword;
+    }
+
+    public function setRetypedPassword(string $retypedPassword): void
+    {
+        $this->retypedPassword = $retypedPassword;
+    }
+
 }
