@@ -26,6 +26,10 @@ class Comment
     #[ORM\JoinColumn(nullable: false)]
     private User $author;
 
+    #[ORM\ManyToOne(targetEntity: BlogPost::class)]
+    #[ORM\JoinColumn(nullable: false)]
+    private BlogPost $blogPost;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -60,9 +64,22 @@ class Comment
         return $this->author;
     }
 
-    public function setAuthor(User $author): void
+    public function setAuthor(User $author): ?self
     {
         $this->author = $author;
+        return $this;
     }
+
+    public function getBlogPost(): BlogPost
+    {
+        return $this->blogPost;
+    }
+
+    public function setBlogPost(BlogPost $blogPost): self
+    {
+        $this->blogPost = $blogPost;
+        return $this;
+    }
+
 
 }

@@ -4,6 +4,8 @@ namespace App\Entity;
 
 use ApiPlatform\Metadata\ApiResource;
 use App\Repository\BlogPostRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
@@ -28,6 +30,19 @@ class BlogPost
     #[ORM\ManyToOne(targetEntity: User::class, inversedBy: 'posts')]
     #[ORM\JoinColumn(nullable: false)]
     private User $author;
+
+    #[ORM\OneToMany(targetEntity: Comment::class, mappedBy: 'blogPost')]
+    private Collection $comments;
+
+    public function __construct()
+    {
+        $this->comments = new ArrayCollection();
+    }
+
+    public function getComments(): Collection
+    {
+        return $this->comments;
+    }
 
     #[ORM\Column(length: 255)]
     private ?String $slug = null;
@@ -78,9 +93,10 @@ class BlogPost
         return $this->slug;
     }
 
-    public function setSlug(?string $slug): void
+    public function setSlug(?string $slug): ?self
     {
         $this->slug = $slug;
+        return $this;
     }
 
     public function getAuthor(): ?User

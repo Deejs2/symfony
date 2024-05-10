@@ -3,17 +3,23 @@
 namespace App\DataFixtures;
 
 use App\Entity\BlogPost;
+use App\Entity\Comment;
 use App\Entity\User;
+use Cocur\Slugify\Slugify;
 use Doctrine\Bundle\FixturesBundle\Fixture;
 use Doctrine\Persistence\ObjectManager;
+use Faker\Factory;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
 class AppFixtures extends Fixture
 {
     private UserPasswordHasherInterface $passwordHasher;
+
+    private \Faker\Generator $faker;
     public function __construct(UserPasswordHasherInterface $passwordHasher)
     {
         $this->passwordHasher = $passwordHasher;
+        $this-> faker = \Faker\Factory::create();
     }
 
     public function load(ObjectManager $manager): void
@@ -23,34 +29,43 @@ class AppFixtures extends Fixture
 
         $this->loadUser($manager);
         $this->loadBlogPost($manager);
+        $this->loadComment($manager);
     }
 
     public function loadBlogPost(ObjectManager $manager) : void
     {
         $user = $this->getReference('user_admin');
-        $blogPost = new BlogPost();
-        $blogPost->setTitle('Why Asteroids Taste Like Bacon')
-            ->setPublished(new \DateTime('2021-01-01 12:00:00'))
-            ->setContent('Asteroids are the bacon of the sky.')
-            ->setAuthor($user)
-            ->setSlug('why-asteroids-taste-like-bacon');
-        $manager->persist($blogPost);
+        $slugify = new Slugify();
 
-        $blogPost = new BlogPost();
-        $blogPost->setTitle('Life on Mars, how to get there')
-            ->setPublished(new \DateTime('2021-01-01 12:00:00'))
-            ->setContent('Elon Musk is planning a colony on Mars.')
-            ->setAuthor($user)
-            ->setSlug('life-on-mars');
-        $manager->persist($blogPost);
+        for ($i = 0; $i < 10; $i++) {
+            $title = $this->faker->realText(30);
+            $slug = $slugify->slugify($title);
 
-        $blogPost = new BlogPost();
-        $blogPost->setTitle('Jiri the switzerland of nepal')
-            ->setPublished(new \DateTime('2021-01-01 12:00:00'))
-            ->setContent('Jiri is very beautiful place in nepal.')
-            ->setAuthor($user)
-            ->setSlug('jiri-the-switzerland-of-nepal');
-        $manager->persist($blogPost);
+            $blogPost = new BlogPost();
+            $blogPost->setTitle($this->faker->realText(30))
+                ->setPublished($this->faker->dateTimeBetween('-1 year', 'now'))
+                ->setContent($this->faker->realText())
+                ->setAuthor($user)
+                ->setSlug($slug);
+            $this->addReference("blog_post_$i", $blogPost);
+            $manager->persist($blogPost);
+        }
+
+        $manager->flush();
+    }
+
+    public function loadComment(ObjectManager $manager) : void
+    {
+        for ($i = 0; $i < 10; $i++) {
+            for ($j = 0; $j < mt_rand(1, 10); $j++) {
+                $comment = new Comment();
+                $comment->setContent($this->faker->realText())
+                    ->setPublished($this->faker->dateTimeBetween('-1 year', 'now'))
+                    ->setAuthor($this->getReference('user_admin'))
+                    ->setBlogPost($this->getReference("blog_post_$i"));
+                $manager->persist($comment);
+            }
+        }
 
         $manager->flush();
     }
